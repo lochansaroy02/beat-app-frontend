@@ -16,9 +16,9 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 
 
 export const metadata: Metadata = {
-  title: "Inquiry Application",
 
-  description: "This app is regardging to the ",
+  title: "Duty Track",
+  description: "Track the performace of beat incharge ",
 };
 
 
@@ -41,7 +41,7 @@ const RootLayout = async ({
 
   return (
     <html lang={locale}>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased  bg-neutral-100`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased  bg-neutral-200`}>
         <NextIntlClientProvider locale={locale} messages={messages}>
           {children}
         </NextIntlClientProvider>
