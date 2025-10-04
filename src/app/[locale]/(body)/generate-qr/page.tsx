@@ -55,7 +55,7 @@ const Page = () => {
             const response = await axios.get(`https://geocode.maps.co/reverse?lat=${lat}&lon=${long}&api_key=${process.env.NEXT_PUBLIC_FREE_MAP_API_KEY}`)
             setAddress(response.data.address);
         } catch (error) {
-            console.log(error);
+            
         }
     }
 
@@ -83,7 +83,7 @@ const Page = () => {
 
             setUrl(url);
             const data = await createQR(sentData)
-            console.log(data);
+            
         } catch (error) {
             console.error(error);
             alert("Failed to generate QR code.");
