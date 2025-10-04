@@ -55,7 +55,7 @@ const Page = () => {
             const response = await axios.get(`https://geocode.maps.co/reverse?lat=${lat}&lon=${long}&api_key=${process.env.NEXT_PUBLIC_FREE_MAP_API_KEY}`)
             setAddress(response.data.address);
         } catch (error) {
-            
+
         }
     }
 
@@ -83,7 +83,7 @@ const Page = () => {
 
             setUrl(url);
             const data = await createQR(sentData)
-            
+
         } catch (error) {
             console.error(error);
             alert("Failed to generate QR code.");
@@ -92,10 +92,10 @@ const Page = () => {
     return (
         <div className="h-full flex items-center pt-8  flex-col">
             <div className="w-full justify-center flex   ">
-                <h1 className="text-4xl  text-neutral-900 font-bold">Generate QR Code</h1>
+                <h1 className="text-4xl   text-neutral-900 font-bold">Generate QR Code</h1>
             </div>
 
-            <div className="w-1/2 flex  mt-12 flex-col gap-4">
+            <div className="w-1/2 flex bg-neutral-300   border border-neutral-800/50  p-8 rounded-xl mt-12 flex-col gap-4">
                 {/* Latitude */}
                 <div>
                     <InputComponent
@@ -124,8 +124,11 @@ const Page = () => {
                     value={policeStation}
                     setInput={setPoliceStation}
                 />
+                <div className="flex  justify-center">
+
+                    <Button onClick={handleGenerate}>Genetate</Button>
+                </div>
             </div>
-            <Button onClick={handleGenerate}>Genetate</Button>
             {/* <MapComponent /> */}
             <div>
                 {url && (
@@ -140,8 +143,6 @@ const Page = () => {
 
                     </div>
                 )}
-
-                {JSON.stringify(address)}
             </div>
         </div>
     );

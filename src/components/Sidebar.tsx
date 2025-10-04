@@ -12,17 +12,17 @@ const Sidebar = () => {
 
     const sidebarData = useMemo(() => {
         const baseRoutes = [
-            { name: t("dashboard"), link: "/dashboard" },
+            { name: "Dashboard", link: "/users" },
+            // { name: t("dashboard"), link: "/dashboard" },
             { name: "Generate QR", link: "/generate-qr" },
-            { name: "Users", link: "/users" },
-            { name: "Map", link: "/map" },
+            // { name: "Map", link: "/map" },
 
         ];
         return baseRoutes;
     }, []);
 
     return (
-        <div className={`   h-screen lg:flex transition-all ease-in-out duration-300 z-40 w-1/5  lg:pt-0 pt-18 fixed lg:glass-effect border border-white/50 rounded-xl bg-neutral-200 `}>
+        <div className={`    h-screen lg:flex transition-all ease-in-out duration-300 z-40 w-1/5  lg:pt-0 pt-18 fixed lg:glass-effect border border-neutral-800/50 rounded-xl bg-neutral-200 `}>
             <div className='p-4 h-full w-full flex gap-4 flex-col'>
                 <div className='flex justify-center'>
                     <Logo width={100} height={100} />

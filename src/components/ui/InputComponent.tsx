@@ -25,7 +25,7 @@ const InputComponent = ({
     disabled,
 }: InputProps) => {
     return (
-        <div className={cn("flex flex-col ", className)}>
+        <div className={cn("flex flex-col  ", className)}>
             <Label className="w-1/4 text-[14px] text-nowrap text-neutral-800">
                 {label}
             </Label>
@@ -33,7 +33,7 @@ const InputComponent = ({
                 id={id}
                 type={type}
                 placeholder={setInput ? `Enter ${label}` : ""}
-                className="text-neutral-800 placeholder:text-neutral-700/50"
+                className="text-neutral-800 bg-neutral-100/50 placeholder:text-neutral-700/50"
                 value={typeof value === "boolean" ? String(value) : value ?? ""}
                 onChange={(e) => setInput?.(e.target.value)}
                 readOnly={!setInput}
