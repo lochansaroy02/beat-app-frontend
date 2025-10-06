@@ -1,10 +1,9 @@
-import React from 'react'
+"use client";
+import Users from '@/components/Users';
 
 const page = () => {
     return (
-        <div className='flex justify-center mt-[98] h-screen'>
-            <h1 className='text-2xl font-semibold'>Welcome to Dutytrack </h1>
-        </div>
+        <Users />
     )
 }
 

@@ -20,7 +20,7 @@ interface PersonProps {
 export const useQRstore = create<PersonProps>((set) => ({
 
     createQR: async (data: QrProps) => {
-        console.log(process.env.NEXT_PUBLIC_BASE_URL)
+
         try {
             const response = await axios.post(`${process.env.NEXT_PUBLIC_BASE_URL}/qr/create`, data)
             return response.data
@@ -32,10 +32,10 @@ export const useQRstore = create<PersonProps>((set) => ({
     getQRData: async (userId: string | undefined) => {
         try {
             const response = await axios.get(`${api}/qr/get/${userId}`)
-            console.log(response.data);
+
             return response
         } catch (error) {
-            console.log(error);
+
             return null
         }
     }

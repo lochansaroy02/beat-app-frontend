@@ -10,6 +10,7 @@ interface InputProps {
     className?: string;
     setInput?: (val: string) => void;
     type?: "text" | "password" | string;
+    placeholder?: any
     // 1. Add the optional 'disabled' prop
     disabled?: boolean;
 }
@@ -21,6 +22,7 @@ const InputComponent = ({
     setInput,
     type,
     id,
+    placeholder,
     // 2. Destructure the new 'disabled' prop
     disabled,
 }: InputProps) => {
@@ -33,7 +35,7 @@ const InputComponent = ({
                 id={id}
                 type={type}
                 placeholder={setInput ? `Enter ${label}` : ""}
-                className="text-neutral-800 bg-neutral-100/50 placeholder:text-neutral-700/50"
+                className="text-neutral-800 bg-neutral-100/50 border border-neutral-800/40 focus:border-0  placeholder:text-neutral-700/50"
                 value={typeof value === "boolean" ? String(value) : value ?? ""}
                 onChange={(e) => setInput?.(e.target.value)}
                 readOnly={!setInput}

@@ -21,12 +21,14 @@ interface AuthState {
     isLoading: boolean;
     isLoggedIn: boolean;
     error: string | null;
-    isInitialized: boolean;
+    isInitialized: boolean; // CRITICAL: Tracks if the store has been hydrated on the client
 }
 
 interface AuthActions {
     login: (payload: LoginPayload) => Promise<boolean>;
     logout: () => void;
+    // New action to safely initialize the state from localStorage
+    initializeStore: () => void;
 }
 
 type AuthStore = AuthState & AuthActions;
@@ -44,18 +46,54 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     isLoading: false,
     isLoggedIn: false,
     error: null,
-    isInitialized: false,
+    isInitialized: false, // Default to false
+
+    // New action to handle client-side hydration
+    initializeStore: () => {
+        // Only run on the client side (after component mounts) and only if not initialized yet
+        if (typeof window !== 'undefined' && !get().isInitialized) {
+            const token = localStorage.getItem(AUTH_TOKEN_KEY);
+            const userDataString = localStorage.getItem(USER_DATA_KEY);
+            let userData: UserData | null = null;
+
+            if (userDataString) {
+                try {
+                    userData = JSON.parse(userDataString) as UserData;
+                } catch (e) {
+                    console.error("Error parsing user data from localStorage:", e);
+                    // Clear broken data
+                    localStorage.removeItem(USER_DATA_KEY);
+                    localStorage.removeItem(AUTH_TOKEN_KEY);
+                }
+            }
+
+            // Set state based on stored data or just mark as initialized
+            if (token && userData) {
+                set({
+                    token,
+                    userData,
+                    isLoggedIn: true,
+                    isInitialized: true,
+                    isLoading: false,
+                });
+            } else {
+                // If no data is found, still mark as initialized to proceed with rendering
+                set({
+                    isInitialized: true,
+                    isLoading: false,
+                });
+            }
+        }
+    },
 
 
     login: async (payload: LoginPayload): Promise<boolean> => {
         set({ isLoading: true, error: null });
         try {
-
-
             const response = await axios.post(`${api}/admin/login`, payload);
             const { token, tokenPayload } = response.data;
 
-            // 1. Save details to localStorage
+            // 1. Save details to localStorage (guarded)
             if (typeof window !== 'undefined') {
                 localStorage.setItem(AUTH_TOKEN_KEY, token);
                 localStorage.setItem(USER_DATA_KEY, JSON.stringify(tokenPayload));
@@ -67,7 +105,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
                 userData: tokenPayload,
                 isLoading: false,
                 isLoggedIn: true,
-                isInitialized: true,
+                isInitialized: true, // Also set to true on successful login
             });
             return true;
 
@@ -81,7 +119,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
                 isLoading: false,
                 isLoggedIn: false,
                 error: errorMessage,
-                isInitialized: true,
+                isInitialized: true, // Ensure we mark as initialized even on error
             });
 
             if (typeof window !== 'undefined') {
@@ -107,6 +145,4 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
             isInitialized: true,
         });
     },
-
-    // CRITICAL: This action reads data back from localStorage and rehydrates the store
 }));

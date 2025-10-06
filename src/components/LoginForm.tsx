@@ -22,18 +22,13 @@ const LoginForm = () => {
     const handleLogin = async () => {
         // Prevent clicking while a login request is already running
         if (isLoading) return;
-
         const response = await login({ email, password });
 
         if (response) {
             // 1. Show Success Toast
             toast.success("Login successful! Redirecting to dashboard.");
-
-            // Note: Use router.replace for navigation after login
-            router.replace("/users");
+            router.push("/dashboard");
         } else {
-            // Optional: Show error toast if login fails (assuming 'login' function returns false or throws on error)
-            // If your login function handles errors and sets a state you check, use that here.
             toast.error("Login failed. Please check your credentials.");
         }
     }
@@ -42,7 +37,7 @@ const LoginForm = () => {
         // This check runs only on the client-side after mount
         if (typeof window !== 'undefined' && localStorage.getItem(AUTH_TOKEN_KEY)) {
             // Token found, redirect immediately
-            router.replace("/users");
+            router.replace("/dashboard");
         } else {
             // No token found, we can now render the form
             setIsCheckingAuth(false);

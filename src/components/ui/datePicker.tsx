@@ -35,7 +35,7 @@ function isValidDate(date: Date | undefined) {
 interface DateProps {
     date: Date | undefined;
     setDate: (date: Date | undefined) => void;
-    label: string
+    label?: string
 }
 
 const DatePicker = ({ date, setDate, label }: DateProps) => {
@@ -44,8 +44,8 @@ const DatePicker = ({ date, setDate, label }: DateProps) => {
     const [value, setValue] = React.useState(formatDate(date))
 
     return (
-        <div className="flex flex-col gap-2 ">
-            <Label htmlFor="date" className=" text-wrap text-lg text-blue-100">
+        <div className="flex flex-row gap-2 ">
+            <Label htmlFor="date" className=" text-wrap text-md text-neutral-800">
                 {label}
             </Label>
             <div className="relative   flex gap-2">
@@ -53,7 +53,7 @@ const DatePicker = ({ date, setDate, label }: DateProps) => {
                     id="date"
                     value={value}
                     placeholder="June 01, 2025"
-                    className="text-blue-100 placeholder:text-blue-200 pr-10"
+                    className="text-neutral-800 placeholder:text-neutral-700/50 pr-10"
                     onChange={(e) => {
                         const date = new Date(e.target.value)
                         setValue(e.target.value)
