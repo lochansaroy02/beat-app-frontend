@@ -21,7 +21,7 @@ const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({ isOpen, onClose }) 
     const [file, setFile] = useState<File | null>(null);
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState('');
-    const { createBulkQR } = useQRstore();
+    const { createBulkQR, } = useQRstore();
 
     if (!isOpen) return null;
 

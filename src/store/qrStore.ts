@@ -15,6 +15,8 @@ interface QRStoreProps {
 
     createQR: (data: QrProps) => Promise<any>
     getQRData: (userId: string | undefined) => Promise<any>
+    createBulkQR: (data: QrProps[]) => Promise<any>
+
 }
 
 export const useQRstore = create<QRStoreProps>((set) => ({
