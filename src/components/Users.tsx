@@ -2,9 +2,9 @@
 
 import UserTable from "@/components/Table";
 import { Button } from "@/components/ui/button";
-import DatePicker from "@/components/ui/datePicker";
+import DatePicker from "@/components/ui/datePicker"; // Assuming DatePicker is a reusable component
 import InputComponent from "@/components/ui/InputComponent";
-import { useAuthStore } from "@/store/authStore"; // 👈 Import useAuthStore
+import { useAuthStore } from "@/store/authStore";
 import { usePersonStore } from "@/store/personStore";
 import { useQRstore } from "@/store/qrStore";
 import { Person, QRDataItem } from "@/types/type";
@@ -19,8 +19,6 @@ const Users = () => {
 
     // 2. Safely get userData and initialization status from Auth Store
     const { userData: authUserData, initializeStore, isInitialized } = useAuthStore();
-    // We will use authUserData.id for fetching.
-
 
     // Initialize displayData with personData. It will be [] initially.
     const [displayData, setDisplayData] = useState(personData);
@@ -31,10 +29,14 @@ const Users = () => {
 
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
-    const [searchDate, setSearchDate] = useState<Date | undefined>(undefined);
-    const [actualSearchDate, setActualSearchDate] = useState<string>("");
 
-    // 3. REMOVED the direct localStorage access here ❌
+    // --- MODIFICATION: New Date States ---
+    const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+    const [endDate, setEndDate] = useState<Date | undefined>(undefined);
+    // State for formatted dates (DD-MM-YYYY)
+    const [actualStartDate, setActualStartDate] = useState<string>("");
+    const [actualEndDate, setActualEndDate] = useState<string>("");
+    // -------------------------------------
 
     /** * Fetches the initial person data for the current user.
      */
@@ -62,7 +64,6 @@ const Users = () => {
             // If initialized but no user data (e.g., logged out), stop loading
             setIsLoading(false);
         }
-        // Dependency array includes the necessary variables for re-running when ready
     }, [isInitialized, authUserData?.id, handleGetPersonData]);
 
 
@@ -85,6 +86,8 @@ const Users = () => {
             return [];
         }
     }, [getQRData]);
+
+
     // 2. Secondary Load: Fetch QR data once personData is available
     useEffect(() => {
         if (personData && personData.length > 0) {
@@ -107,11 +110,6 @@ const Users = () => {
             setIsLoading(false);
         }
     }, [personData, fetchQRDataForPerson]);
-
-    /**
-     * Fetches the QR scan data for a specific PNO Number.
-     */
-
 
 
     // 3. Address Geocoding (No change needed here)
@@ -151,11 +149,11 @@ const Users = () => {
     }, [qrDataMap]);
 
     /**
-     * Formats the Date object into a DD-MM-YYYY string for searching. (No change needed here)
+     * Formats the Date object into a DD-MM-YYYY string for searching.
      */
-    function formatDateString(dateStr: Date | undefined) {
+    function formatDateString(dateStr: Date | undefined, setter: React.Dispatch<React.SetStateAction<string>>) {
         if (!dateStr) {
-            setActualSearchDate("");
+            setter("");
             return;
         }
         const date = new Date(dateStr);
@@ -163,17 +161,22 @@ const Users = () => {
         const mm = String(date.getMonth() + 1).padStart(2, "0");
         const yyyy = date.getFullYear();
 
-        setActualSearchDate(`${dd}-${mm}-${yyyy}`);
+        setter(`${dd}-${mm}-${yyyy}`);
     }
 
-    // Run formatting when the date picker changes (No change needed here)
+    // --- MODIFICATION: Run formatting when start/end date pickers change ---
     useEffect(() => {
-        formatDateString(searchDate);
-    }, [searchDate]);
+        formatDateString(startDate, setActualStartDate);
+    }, [startDate]);
+
+    useEffect(() => {
+        formatDateString(endDate, setActualEndDate);
+    }, [endDate]);
+    // ----------------------------------------------------------------------
 
 
     /**
-     * Filters the personData based on the current search query and actualSearchDate. (No change needed here)
+     * Filters the personData based on the current search query and date range.
      */
     const applyFilters = useCallback(() => {
         let filteredData = personData;
@@ -186,36 +189,85 @@ const Users = () => {
             );
         }
 
-        // 2. Filter by Date
-        if (actualSearchDate) {
-            const pnoNosWithScanOnDate = new Set<string>();
+        // --- MODIFICATION: Filter by Date Range ---
+        if (actualStartDate && actualEndDate) {
+            const pnoNosWithScanInRange = new Set<string>();
 
-            // Find all pnoNo's that have a scan on the searched date
+            // Convert DD-MM-YYYY dates to Date objects for comparison
+            // Note: This conversion is only for comparison; the qrData.scannedOn is still a string.
+            const [sDay, sMonth, sYear] = actualStartDate.split('-').map(Number);
+            // Months are 0-indexed in Date object, so sMonth - 1
+            const startOfDay = new Date(sYear, sMonth - 1, sDay);
+            startOfDay.setHours(0, 0, 0, 0); // Start of the start day
+
+            const [eDay, eMonth, eYear] = actualEndDate.split('-').map(Number);
+            const endOfDay = new Date(eYear, eMonth - 1, eDay);
+            endOfDay.setHours(23, 59, 59, 999); // End of the end day
+
+            // Find all pnoNo's that have a scan within the date range
+            for (const [pnoNo, qrData] of qrDataMap.entries()) {
+                const hasScanInRange = qrData.some(item => {
+                    // item.scannedOn is like "DD-MM-YYYY HH:MM:SS"
+                    // Extract DD-MM-YYYY part and convert to a comparable Date object
+                    const datePart = item.scannedOn.split(' ')[0]; // DD-MM-YYYY
+                    const [qDay, qMonth, qYear] = datePart.split('-').map(Number);
+                    // Use new Date(Year, Month-1, Day) for consistent comparison without time component issues
+                    const scanDate = new Date(qYear, qMonth - 1, qDay);
+                    scanDate.setHours(12, 0, 0, 0); // Set to noon to avoid timezone/daylight savings issues
+
+                    return scanDate.getTime() >= startOfDay.getTime() && scanDate.getTime() <= endOfDay.getTime();
+                });
+
+                if (hasScanInRange) {
+                    pnoNosWithScanInRange.add(pnoNo);
+                }
+            }
+
+            // Filter the current data set to only include PNOs with a scan in that range
+            filteredData = filteredData.filter((person: Person) =>
+                pnoNosWithScanInRange.has(person.pnoNo)
+            );
+        } else if (actualStartDate && !actualEndDate) {
+            // Handle case where only start date is selected (filter for that day only)
+            const pnoNosWithScanOnDate = new Set<string>();
             for (const [pnoNo, qrData] of qrDataMap.entries()) {
                 const hasScanOnDate = qrData.some(item =>
-                    item.scannedOn.startsWith(actualSearchDate)
+                    item.scannedOn.startsWith(actualStartDate) // DD-MM-YYYY match
                 );
                 if (hasScanOnDate) {
                     pnoNosWithScanOnDate.add(pnoNo);
                 }
             }
-
-            // Filter the current data set to only include PNOs with a scan on that date
+            filteredData = filteredData.filter((person: Person) =>
+                pnoNosWithScanOnDate.has(person.pnoNo)
+            );
+        } else if (!actualStartDate && actualEndDate) {
+            // Handle case where only end date is selected (filter for that day only)
+            const pnoNosWithScanOnDate = new Set<string>();
+            for (const [pnoNo, qrData] of qrDataMap.entries()) {
+                const hasScanOnDate = qrData.some(item =>
+                    item.scannedOn.startsWith(actualEndDate) // DD-MM-YYYY match
+                );
+                if (hasScanOnDate) {
+                    pnoNosWithScanOnDate.add(pnoNo);
+                }
+            }
             filteredData = filteredData.filter((person: Person) =>
                 pnoNosWithScanOnDate.has(person.pnoNo)
             );
         }
+        // ------------------------------------------------------------------
 
         setDisplayData(filteredData);
-    }, [personData, searchQuery, actualSearchDate, qrDataMap]);
+    }, [personData, searchQuery, actualStartDate, actualEndDate, qrDataMap]);
 
-    // Apply filters automatically when search query or actualSearchDate changes (No change needed here)
+    // Apply filters automatically when search query or formatted dates changes
     useEffect(() => {
         applyFilters();
-    }, [searchQuery, actualSearchDate, applyFilters]);
+    }, [searchQuery, actualStartDate, actualEndDate, applyFilters]);
 
 
-    // Use the applyFilters function for the Search button (No change needed here)
+    // Use the applyFilters function for the Search button
     const handleSearchClick = () => {
         applyFilters();
     };
@@ -230,11 +282,22 @@ const Users = () => {
             </div>
 
             <div className="glass-effect my-4 h-24 flex items-center gap-4 px-4 ">
+                {/* --- MODIFICATION: Two DatePickers for Start and End Date --- */}
                 <div>
+                    <label className="text-sm">Start Date</label>
                     <DatePicker
-                        date={searchDate}
-                        setDate={setSearchDate} />
+                        date={startDate}
+                        setDate={setStartDate}
+                    />
                 </div>
+                <div>
+                    <label className="text-sm">End Date</label>
+                    <DatePicker
+                        date={endDate}
+                        setDate={setEndDate}
+                    />
+                </div>
+                {/* ------------------------------------------------------------- */}
                 <div className="flex gap-4 items-center">
                     <InputComponent
                         value={searchQuery}

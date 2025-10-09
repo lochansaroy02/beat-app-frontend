@@ -1,4 +1,5 @@
 "use client";
+import ExcelUploadModal from "@/components/src/components/ExcelUploadModal";
 import { Button } from "@/components/ui/button";
 import InputComponent from "@/components/ui/InputComponent";
 import { useQRstore } from "@/store/qrStore";
@@ -10,16 +11,17 @@ const Page = () => {
     const [lat, setLat] = useState("");
     const [long, setLong] = useState("");
     const [policeStation, setPoliceStation] = useState("");
+    const [dutyPoint, setDutyPoint] = useState("");
+
     const [url, setUrl] = useState("")
+    const [isModalOpen, setIsModalOpen] = useState(false); // State for modal visibility
+
     // ✅ validation states
     const [latError, setLatError] = useState("");
     const [longError, setLongError] = useState("");
     const [address, setAddress] = useState(null);
 
-
-
     const { createQR } = useQRstore()
-
 
     const validateLatitude = (val: string) => {
         const num = Number(val);
@@ -47,15 +49,12 @@ const Page = () => {
         setLongError(validateLongitude(val));
     };
 
-
-
     const cordToAddress = async (lat: string, long: string) => {
-
         try {
             const response = await axios.get(`https://geocode.maps.co/reverse?lat=${lat}&lon=${long}&api_key=${process.env.NEXT_PUBLIC_FREE_MAP_API_KEY}`)
             setAddress(response.data.address);
         } catch (error) {
-
+            console.error("Geocoding error:", error);
         }
     }
 
@@ -75,7 +74,8 @@ const Page = () => {
         const sentData = {
             lattitude: lat,
             longitude: long,
-            policeStation: policeStation
+            policeStation: policeStation,
+            dutyPoint: dutyPoint
         };
 
         try {
@@ -83,12 +83,18 @@ const Page = () => {
 
             setUrl(url);
             const data = await createQR(sentData)
+            alert("Single QR code generated successfully!");
 
         } catch (error) {
             console.error(error);
             alert("Failed to generate QR code.");
         }
     };
+
+    // Handler to close the modal
+    const handleModalClose = () => setIsModalOpen(false);
+
+
     return (
         <div className="h-full flex items-center pt-8  flex-col">
             <div className="w-full justify-center flex   ">
@@ -96,6 +102,15 @@ const Page = () => {
             </div>
 
             <div className="w-1/2 flex bg-neutral-300   border border-neutral-800/50  p-8 rounded-xl mt-12 flex-col gap-4">
+                <div className="flex justify-end mb-4">
+                    <Button onClick={() => setIsModalOpen(true)} className="bg-green-600 hover:bg-green-700">
+                        Upload from Excel 📊
+                    </Button>
+                </div>
+
+                {/* Single Entry Form */}
+                <h2 className="text-2xl font-semibold mb-2 text-center">Single Entry</h2>
+
                 {/* Latitude */}
                 <div>
                     <InputComponent
@@ -124,26 +139,35 @@ const Page = () => {
                     value={policeStation}
                     setInput={setPoliceStation}
                 />
+                <InputComponent
+                    label="Duty Point"
+                    value={dutyPoint}
+                    setInput={setDutyPoint}
+                />
                 <div className="flex  justify-center">
-
-                    <Button onClick={handleGenerate}>Genetate</Button>
+                    <Button onClick={handleGenerate}>Generate Single QR</Button>
                 </div>
             </div>
-            {/* <MapComponent /> */}
+
+            {/* QR Display */}
             <div>
                 {url && (
                     <div className="mt-8 flex flex-col items-center p-6 border rounded-lg shadow-lg bg-white">
                         <h2 className="text-xl font-semibold mb-4">Scan Me!</h2>
-                        {/* Display the generated QR code image */}
                         <img
                             src={url}
                             alt="Generated QR Code"
                             className="w-64 h-64 border-4 border-gray-200"
                         />
-
                     </div>
                 )}
             </div>
+
+            {/* Excel Upload Modal */}
+            <ExcelUploadModal
+                isOpen={isModalOpen}
+                onClose={handleModalClose}
+            />
         </div>
     );
 };

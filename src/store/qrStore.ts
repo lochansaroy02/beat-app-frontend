@@ -11,13 +11,13 @@ interface QrProps {
     policeStation: string
 }
 
-interface PersonProps {
+interface QRStoreProps {
 
     createQR: (data: QrProps) => Promise<any>
     getQRData: (userId: string | undefined) => Promise<any>
 }
 
-export const useQRstore = create<PersonProps>((set) => ({
+export const useQRstore = create<QRStoreProps>((set) => ({
 
     createQR: async (data: QrProps) => {
 
@@ -26,6 +26,16 @@ export const useQRstore = create<PersonProps>((set) => ({
             return response.data
         } catch (error) {
             console.error(error)
+            return null
+        }
+    },
+    createBulkQR: async (data: QrProps[]) => {
+        try {
+            // Assuming your backend has a new route for bulk creation: /qr/create/bulk
+            const response = await axios.post(`${process.env.NEXT_PUBLIC_BASE_URL}/qr/create/bulk`, { bulkData: data });
+            return response.data
+        } catch (error) {
+            console.error("Bulk QR creation error:", error)
             return null
         }
     },
