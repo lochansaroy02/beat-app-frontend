@@ -12,15 +12,17 @@ interface QrProps {
 }
 
 interface QRStoreProps {
-
+    allQRData: any[]
     createQR: (data: QrProps) => Promise<any>
     getQRData: (userId: string | undefined) => Promise<any>
+    getAllQR: () => Promise<any>
     createBulkQR: (data: QrProps[]) => Promise<any>
+
 
 }
 
 export const useQRstore = create<QRStoreProps>((set) => ({
-
+    allQRData: [],
     createQR: async (data: QrProps) => {
 
         try {
@@ -44,7 +46,17 @@ export const useQRstore = create<QRStoreProps>((set) => ({
     getQRData: async (userId: string | undefined) => {
         try {
             const response = await axios.get(`${api}/qr/get/${userId}`)
+            set({
+                allQRData: response.data
+            })
 
+        } catch (error) {
+            console.log(error);
+        }
+    },
+    getAllQR: async () => {
+        try {
+            const response = await axios.get(`${api}/qr/get-all `)
             return response
         } catch (error) {
 

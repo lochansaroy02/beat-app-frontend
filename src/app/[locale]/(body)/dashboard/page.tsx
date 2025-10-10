@@ -1,9 +1,10 @@
 "use client";
-import Users from '@/components/Users';
 
 const page = () => {
     return (
-        <Users />
+        <div>
+            <h1>this is dashboard</h1>
+        </div>
     )
 }
 

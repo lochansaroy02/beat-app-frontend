@@ -37,43 +37,25 @@ const page = () => {
         }
     }
     return (
-        <div className=" ">
+        <div className="flex flex-col justify-center items-center  bg-red-500 ">
             <div className="my-4 justify-center flex ">
                 <h1 className="text-2xl font-stretch-semi">Create Users</h1>
             </div>
-            <div className="  w-1/2 flex bg-neutral-300   border border-neutral-800/50  p-8 rounded-xl mt-24 flex-col gap-4">
-                {/* Latitude */}
-                <InputComponent
-                    label="Name"
-                    value={name}
-                    setInput={setName}
-                />
-                <div>
-                    <InputComponent
-                        label="PNo No"
-                        value={pnoNo}
-                        setInput={setPnoNo}
-                        type="text"
-                    />
-                    {/* {latError && <p className="text-red-500 text-sm">{latError}</p>} */}
-                </div>
+            <div className="w-full h-screen">
 
-                {/* Longitude */}
-                <div>
-                    <InputComponent
-                        label="password"
-                        value={password}
-                        setInput={setPassword}
-                        type="text"
-                    />
+                <div className="  w-1/2  flex bg-neutral-300   border border-neutral-800/50  p-8 rounded-xl mt-12 flex-col gap-4">
+                    {/* Latitude */}
+                    <InputComponent label="Name" value={name} setInput={setName} />
+                    <InputComponent label="PNo No" value={pnoNo} setInput={setPnoNo} type="text" />
+                    <InputComponent label="password" value={password} setInput={setPassword} type="text" />
 
-                </div>
 
-                {/* Police Station */}
+                    {/* Police Station */}
 
-                <div className="flex  justify-center">
+                    <div className="flex  justify-center">
 
-                    <Button onClick={handleGenerate}>create</Button>
+                        <Button onClick={handleGenerate}>create</Button>
+                    </div>
                 </div>
             </div>
         </div>
