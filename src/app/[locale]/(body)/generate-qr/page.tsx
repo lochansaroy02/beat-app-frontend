@@ -80,7 +80,7 @@ const Page = () => {
 
         try {
             const url = await generateQrcode(sentData);
-
+            //@ts-ignore
             setUrl(url);
             const data = await createQR(sentData)
             alert("Single QR code generated successfully!");
