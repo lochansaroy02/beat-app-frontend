@@ -26,7 +26,7 @@ const page = () => {
     // State to store QR data: Map<pnoNo, QRDataItem[]>
     const [qrDataMap, setQrDataMap] = useState<Map<string, QRDataItem[]>>(new Map());
     const [addressMap, setAddressMap] = useState<Map<string, string>>(new Map());
-
+    console.log(qrDataMap);
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
 

@@ -47,7 +47,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         return `
             flex-1 text-center py-3 px-6 rounded-t-lg transition-all duration-300 font-medium whitespace-nowrap
             ${isActive
-                ? 'bg-indigo-600 text-white border-b-2 border-indigo-500 shadow-md' // Active state styling (high contrast)
+                ? 'bg-indigo-600 text-white border-b-2 border-indigo-500 shadow-md' // Active state styling (HIGHLIGHT COLOR: INDIGO)
                 : 'text-gray-600 hover:text-indigo-600 hover:bg-gray-100 border-b-2 border-transparent' // Inactive state styling
             }
             sm:flex-none sm:w-auto
