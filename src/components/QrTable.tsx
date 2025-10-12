@@ -2,7 +2,9 @@
 import { CheckCircle, List, QrCode, Table, Trash2, XCircle } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 
+import { useQRstore } from '@/store/qrStore';
 import { generatePdfWithQRCodes } from '@/utils/genetateQR';
+import toast from 'react-hot-toast';
 import { CustomCheckbox } from './CustomCheckbox';
 import { Button } from './ui/button'; // Assuming this is your Shadcn button component
 
@@ -70,6 +72,7 @@ const QRTable = ({ data, excludedKeys = [] }: QRTableProps) => {
     const getRowKey = useCallback((item, index) => item.id ?? index, []);
     const [selectedRows, setSelectedRows] = useState(new Set());
 
+    const { deleteQR, deleteMultipleQRs } = useQRstore()
     const dataKeys = useMemo(() => {
         if (!data || data.length === 0) return [];
         return Object.keys(data[0]);
@@ -157,8 +160,21 @@ const QRTable = ({ data, excludedKeys = [] }: QRTableProps) => {
         }
     };
 
+    const handleDelete = async (selectedIds) => {
+        if (selectedIds.length === 0) return;
+
+        try {
+            const message = await deleteMultipleQRs(selectedIds) // Use the new store function for bulk delete
+            toast.success(message || "Selected QR codes deleted successfully!")
+            setSelectedRows(new Set()); // Clear selection after deletion
+        } catch (error) {
+            console.error("Error while deleting QRs:", error);
+            toast.error("Error while deleting selected QRs")
+        }
+    }
     // --- Component JSX ---
     const isActionDisabled = selectedRows.size === 0;
+
 
     return (
         <div className="bg-neutral-200 rounded-xl shadow-2xl p-4 md:p-6 overflow-x-auto">
@@ -180,6 +196,10 @@ const QRTable = ({ data, excludedKeys = [] }: QRTableProps) => {
                     <Button
                         className={`cursor-pointer bg-red-500 ${isActionDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-red-600/70'}`}
                         disabled={isActionDisabled}
+                        onClick={() => {
+                            // FIX: Correctly pass the array of selected IDs
+                            handleDelete(Array.from(selectedRows))
+                        }}
                     >
                         <Trash2 className="w-5 h-5 mr-2" />
                         Delete ({selectedRows.size})

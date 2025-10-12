@@ -1,33 +1,20 @@
 "use client";
 import QRTable from "@/components/QrTable";
 import { useQRstore } from "@/store/qrStore";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 const page = () => {
-    const { getAllQR } = useQRstore()
-    const [qrData, setQrData] = useState([])
-    const getQR = async () => {
-        try {
-            const response = await getAllQR()
-            if (response.data.success) {
-                setQrData(response.data.data)
-            }
-        } catch (error) {
-            console.log(error);
-        }
-    }
+    const { getAllQR, allQRData } = useQRstore()
+
 
     const excludedKeys = ['createdAt', 'id']
 
     useEffect(() => {
-        getQR()
+        getAllQR()
     }, [])
-
-    console.log(qrData);
     return (
         <div className="relative">
-
-            <QRTable data={qrData} excludedKeys={excludedKeys} />
+            <QRTable data={allQRData} excludedKeys={excludedKeys} />
         </div>
     )
 }

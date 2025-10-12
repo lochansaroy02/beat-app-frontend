@@ -17,7 +17,8 @@ interface QRStoreProps {
     getQRData: (userId: string | undefined) => Promise<any>
     getAllQR: () => Promise<any>
     createBulkQR: (data: QrProps[]) => Promise<any>
-
+    deleteQR: (qrId: string | undefined) => Promise<any>
+    deleteMultipleQRs: (qrIds: string | undefined[]) => Promise<string>
 
 }
 
@@ -46,6 +47,7 @@ export const useQRstore = create<QRStoreProps>((set) => ({
     getQRData: async (pnoNO: string | undefined) => {
         try {
             const response = await axios.get(`${api}/qr/get/${pnoNO}`)
+            set({ allQRData: response.data || [] });
             console.log(response.data);
             return response
 
@@ -61,7 +63,51 @@ export const useQRstore = create<QRStoreProps>((set) => ({
 
             return null
         }
+    },
+    deleteQR: async (qrId: string | undefined) => {
+        try {
+            const response = await axios.delete(`${api}/qr/delete/${qrId} `)
+            console.log(response.data);
+            return response.data
+        } catch (error) {
+            console.log(error);
+        }
+    },
+    deleteMultipleQRs: async (qrIds: string | undefined[]) => {
+        let successCount = 0;
+        let errorCount = 0;
+        const results: any[] = [];
+
+        // Get the current state functions
+        const { getAllQR } = useQRstore.getState(); // NEW: Get the function from state
+
+        for (const qrId of qrIds) {
+            try {
+                // FIX: Removed the trailing space from URL in single delete
+                const response = await axios.delete(`${api}/qr/delete/${qrId}`);
+                results.push({ id: qrId, status: 'success', data: response.data });
+                successCount++;
+            } catch (error) {
+                console.error(`Error deleting QR ${qrId}:`, error);
+                results.push({ id: qrId, status: 'error', error: error });
+                errorCount++;
+            }
+        }
+
+        // --- NEW: REFRESH STATE AFTER DELETIONS ---
+        if (successCount > 0) {
+            // Call the updated getAllQR to fetch new data and update 'allQRData' state
+            await getAllQR();
+        }
+        // ----------------------------------------
+
+        if (errorCount === 0) {
+            return `Successfully deleted ${successCount} QR code(s).`;
+        } else {
+            return `Completed deletions. ${successCount} successful, ${errorCount} failed.`;
+        }
     }
+
 
 }));
 
