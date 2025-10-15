@@ -74,8 +74,7 @@ export const useUserStore = create<UserProps>((set) => ({
                 body
             );
 
-            console.log(response.data);
-            
+
             if (response.status === 207 && isBulk) {
                 // Handle 207 Multi-Status for bulk operation
                 const { message, errors } = response.data;

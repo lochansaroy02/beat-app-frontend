@@ -41,29 +41,52 @@ const CreateUsers: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
         reader.onload = (e) => {
             try {
                 const data = e.target?.result;
+                // Read the workbook as binary
                 const workbook = XLSX.read(data, { type: 'binary' });
                 const sheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[sheetName];
 
-                // Convert the sheet data to a JSON array
-                const json: any[] = XLSX.utils.sheet_to_json(worksheet);
+                // Convert the sheet data to a JSON array.
+                // NOTE: header: 1 ensures the first row is used as headers.
+                const json: any[] = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
 
-                // Map and validate the required fields
-                const formattedData: ExcelUserData[] = json.map(row => ({
-                    // Ensure column names match headers in the Excel file (case sensitive)
-                    name: String(row.name || ''),
-                    pnoNo: String(row.pnoNo || ''),
-                    password: String(row.password || ''),
-                })).filter(user => user.name && user.pnoNo && user.password); // Filter out rows with missing data
+                // The first row of the JSON is the header. We need to find the correct
+                // column indices for 'name', 'pnoNo', and 'Password' (case-sensitive).
+                if (json.length === 0) {
+                    throw new Error("File is empty.");
+                }
+
+                const headers: string[] = json[0];
+                const nameIndex = headers.indexOf('name');
+                const pnoNoIndex = headers.indexOf('pnoNo');
+                // *** FIX: Case-sensitive check for 'Password' as per your Excel image ***
+                const passwordIndex = headers.indexOf('Password');
+
+                if (nameIndex === -1 || pnoNoIndex === -1 || passwordIndex === -1) {
+                    throw new Error("Missing required columns: 'name', 'pnoNo', or 'Password' (case-sensitive).");
+                }
+
+                // Map and validate the required fields from the data rows (starting from index 1)
+                const formattedData: ExcelUserData[] = json.slice(1).map((row: any[]) => ({
+                    // *** FIX: Explicitly cast all values to String and ensure correct column index is used ***
+                    name: String(row[nameIndex] || ''),
+                    pnoNo: String(row[pnoNoIndex] || ''),
+                    password: String(row[passwordIndex] || ''),
+                    // Filter out rows where any of the required fields is empty after string conversion
+                })).filter(user => user.name.trim() && user.pnoNo.trim() && user.password.trim());
+
+                if (formattedData.length === 0) {
+                    throw new Error("No valid user data found in the file.");
+                }
 
                 onUpload(formattedData);
                 setLoading(false);
                 setFile(null); // Clear file input
                 onClose(); // Close modal on successful initiation
 
-            } catch (error) {
+            } catch (error: any) {
                 console.error("Error processing file:", error);
-                alert("Error processing file. Please ensure it's a valid Excel/CSV file with 'name', 'pnoNo', and 'password' columns.");
+                alert(`Error processing file: ${error.message || "Please ensure it's a valid Excel/CSV file with 'name', 'pnoNo', and 'Password' (case-sensitive) columns."}`);
                 setLoading(false);
             }
         };
@@ -77,7 +100,10 @@ const CreateUsers: React.FC<UploadModalProps> = ({ isOpen, onClose, onUpload }) 
                 <h2 className="text-xl font-bold mb-4">Bulk User Upload</h2>
                 <p className="text-sm text-gray-600 mb-4">Upload an Excel or CSV file containing columns:
                     <span className="font-semibold ml-1">
-                        name, pnoNo, password.
+                        name, pnoNo, Password.
+                    </span>
+                    <span className="ml-1 italic text-red-500">
+                        (Password is case-sensitive)
                     </span>
                 </p>
                 <input

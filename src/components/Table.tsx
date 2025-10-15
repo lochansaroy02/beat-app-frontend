@@ -45,9 +45,7 @@ const UserTable = ({ personData, qrDataMap, addressMap, isLoading }: {
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Sr No.
                         </th>
-                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            id
-                        </th>
+
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Name
                         </th>
@@ -83,7 +81,6 @@ const UserTable = ({ personData, qrDataMap, addressMap, isLoading }: {
                                 return (
                                     <tr key={person.id || index} className='hover:bg-gray-100 transition-colors bg-red-50/50'>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{index + 1}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{person.id}</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{person.name}</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{person.pnoNo}</td>
                                         <td className="px-6 py-4 whitespace-normal text-sm text-gray-700">{address}</td>
