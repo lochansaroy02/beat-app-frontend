@@ -4,7 +4,9 @@ import { create } from 'zustand';
 
 // --- Interfaces ---
 
+
 interface LoginPayload {
+    role: string
     email: string;
     password: string;
 }
@@ -90,7 +92,23 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
     login: async (payload: LoginPayload): Promise<boolean> => {
         set({ isLoading: true, error: null });
         try {
-            const response = await axios.post(`${api}/admin/login`, payload);
+            let response;
+            const sentData = {
+
+            }
+            if (payload.role === "subadmin") {
+                response = await axios.post(`${api}/subAdmin/login`, {
+                    mobileNo: payload.email,
+                    password: payload.password
+                });
+            } else {
+                response = await axios.post(`${api}/admin/login`, {
+                    email: payload.email,
+                    password: payload.password
+                });
+            }
+
+            console.log(response);
             const { token, tokenPayload } = response.data;
 
             // 1. Save details to localStorage (guarded)

@@ -1,11 +1,14 @@
 "use client";
 
 import Logo from '@/assets/Logo';
+import { useAuthStore } from '@/store/authStore';
 import { useTranslations } from 'next-intl';
 import { usePathname, useRouter } from 'next/navigation';
 import { useMemo } from 'react';
 
 const Sidebar = () => {
+    const { userData } = useAuthStore()
+    console.log(userData);
     const path = usePathname();
     const router = useRouter();
     const t = useTranslations("Sidebar");
@@ -16,6 +19,7 @@ const Sidebar = () => {
             // { name: t("dashboard"), link: "/dashboard" },
             { name: "Generate QR", link: "/generate-qr" },
             { name: "Add User", link: "/add-users" },
+            { name: "Add Sub Admin", link: "/add-subadmin" },
             // { name: "Map", link: "/map" },
 
         ];
