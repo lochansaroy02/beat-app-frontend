@@ -1,5 +1,3 @@
-// This is the UserTable component code you provided (no changes needed for the fix)
-
 import { Person } from "@/types/type";
 import ImageSlider from "./ImageSlider";
 
@@ -10,6 +8,7 @@ type QrScanData = {
     policeStation: string;
     lattitude: number; // Added lat/long since they're used for address
     longitude: number;
+    dutyPoint: string
     // Add other properties of a QR scan record here
 };
 
@@ -27,6 +26,7 @@ const UserTable = ({ personData, qrDataMap, addressMap, isLoading }: {
             </div>
         );
     }
+
 
     // Now uses the updated displayData from Users.tsx
     if (!personData || personData.length === 0) {
@@ -62,6 +62,9 @@ const UserTable = ({ personData, qrDataMap, addressMap, isLoading }: {
                             Police Station
                         </th>
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Duty Point
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Images
                         </th>
                     </tr>
@@ -78,67 +81,71 @@ const UserTable = ({ personData, qrDataMap, addressMap, isLoading }: {
 
                             if (scanCount === 0) {
                                 // CASE 1: No scan data found (render a single row)
+                                // IMPORTANT: Ensure the number of <td> elements matches the number of <th> elements (8 in total).
                                 return (
                                     <tr key={person.id || index} className='hover:bg-gray-100 transition-colors bg-red-50/50'>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{index + 1}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{person.name}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{person.pnoNo}</td>
-                                        <td className="px-6 py-4 whitespace-normal text-sm text-gray-700">{address}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">Never Scanned</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">N/A</td>
-                                        <td className="px-6 py-4"><ImageSlider photos={person.photos} /></td>
+                                        <td className="px-6 py-4 text-sm font-medium text-gray-900">{index + 1}</td> {/* 1. Sr No. */}
+                                        <td className="px-6 py-4 text-sm text-gray-700">{person.name}</td> {/* 2. Name */}
+                                        <td className="px-6 py-4 text-sm text-gray-700">{person.pnoNo}</td> {/* 3. PNO No. */}
+                                        <td className="px-6 py-4 whitespace-normal text-sm text-gray-700">{address}</td> {/* 4. Location (Address) */}
+                                        <td className="px-6 py-4 text-sm text-gray-700">Never Scanned</td> {/* 5. Scanned On */}
+                                        <td className="px-6 py-4 text-sm text-gray-700">N/A</td> {/* 6. Police Station */}
+                                        <td className="px-6 py-4 text-sm text-gray-700">N/A</td> {/* 7. Duty Point (Added N/A to match the header) */}
+                                        <td className="px-6 py-4"><ImageSlider photos={person.photos} /></td> {/* 8. Images */}
                                     </tr>
                                 );
                             }
 
-                            // CASE 2: One or more scan records found (render multiple rows)
-                            // We map over the scan data to create one row per scan
                             return personQrData.map((scan: QrScanData, scanIndex: number) => {
-
                                 return (
                                     <tr key={`${person.id}-${scan.id || scanIndex}`} className='hover:bg-gray-100 transition-colors'>
 
-                                        {/* RowSpan: Only render these cells on the FIRST row of the person's scans */}
+                                        {/* RowSpan Columns: Only render these on the FIRST row of the person's scans */}
                                         {scanIndex === 0 && (
                                             <>
                                                 {/* Column 1: Sr No. */}
-                                                <td rowSpan={scanCount} className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 border-r border-gray-200">
+                                                <td rowSpan={scanCount} className="px-6 py-4 text-sm font-medium text-gray-900 border-r border-gray-200">
                                                     {index + 1}
                                                 </td>
                                                 {/* Column 2: Name */}
-                                                <td rowSpan={scanCount} className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 border-r border-gray-200">
+                                                <td rowSpan={scanCount} className="px-6 py-4 text-sm text-gray-700 border-r border-gray-200">
                                                     {person.name}
                                                 </td>
                                                 {/* Column 3: PNO No. */}
-                                                <td rowSpan={scanCount} className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 border-r border-gray-200">
+                                                <td rowSpan={scanCount} className="px-6 py-4 text-sm text-gray-700 border-r border-gray-200">
                                                     {person.pnoNo}
                                                 </td>
+                                                {/* Column 4: Location (ADDRESS) */}
+                                                <td rowSpan={scanCount} className="px-6 py-4 whitespace-normal text-sm text-gray-700 border-r border-gray-200">
+                                                    {address}
+                                                </td>
                                             </>
-                                        )}
+                                        )}{/* FIX: Removed whitespace/newline after the closing fragment </> */}
 
-                                        {/* Column 4: Location (ADDRESS - common for all scans of a PNO) */}
-                                        {scanIndex === 0 && (
-                                            <td rowSpan={scanCount} className="px-6 py-4 whitespace-normal text-sm text-gray-700 border-r border-gray-200">
-                                                {address}
-                                            </td>
-                                        )}
+                                        {/* Non-RowSpan Columns (Scan-specific data) */}
 
-                                        {/* Column 5: Scanned On (Scan-specific data) */}
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                        {/* Column 5: Scanned On */}
+                                        <td className="px-6 py-4 text-sm text-gray-700">
                                             {scan.scannedOn}
                                         </td>
 
-                                        {/* Column 6: Police Station (Scan-specific data) */}
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                        {/* Column 6: Police Station */}
+                                        <td className="px-6 py-4 text-sm text-gray-700">
                                             {scan.policeStation}
                                         </td>
 
-                                        {/* Column 7: Images */}
+                                        {/* Column 7: Duty Point */}
+                                        <td className="px-6 py-4 text-sm text-gray-700">
+                                            {scan.dutyPoint}
+                                        </td>
+
+
+                                        {/* Column 8: Images (RowSpan) */}
                                         {scanIndex === 0 && (
                                             <td rowSpan={scanCount} className="px-6 py-4 border-l border-gray-200">
                                                 <ImageSlider photos={person.photos} />
                                             </td>
-                                        )}
+                                        )}{/* FIX: Removed whitespace/newline after the closing conditional bracket } */}
                                     </tr>
                                 )
                             })

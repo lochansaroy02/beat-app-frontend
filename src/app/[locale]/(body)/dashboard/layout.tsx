@@ -42,12 +42,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     const getLinkClasses = (url: string) => {
         // Check if the current path starts with the tab's URL to determine active state
+        // This is robust for nested paths like /dashboard/user/profile
         const isActive = currentPath.startsWith(url);
-
         return `
             flex-1 text-center py-3 px-6 rounded-t-lg transition-all duration-300 font-medium whitespace-nowrap
             ${isActive
-                ? 'bg-indigo-600 text-white border-b-2 border-indigo-500 shadow-md' // Active state styling (HIGHLIGHT COLOR: INDIGO)
+                ? 'bg-indigo-600 text-white border-b-2 border-indigo-500 shadow-md' // Active state 
                 : 'text-gray-600 hover:text-indigo-600 hover:bg-gray-100 border-b-2 border-transparent' // Inactive state styling
             }
             sm:flex-none sm:w-auto
@@ -55,11 +55,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     };
 
     return (
-        <div className="min-h-screen bg-gray-100 p-4 sm:p-8">
+        <div className="min-h-screen bg-gray-100  sm:p-8">
             <header className="mb-6 bg-white rounded-xl shadow-xl p-6">
-                <h1 className="text-3xl font-extrabold text-gray-900 mb-4 border-b pb-2">
-                    App Dashboard
-                </h1>
 
                 {/* Tabs Container */}
                 <nav className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-1 mt-4 border-b border-gray-200">
@@ -68,10 +65,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                             key={tab.url}
                             href={tab.url} // Replaced <Link> with standard <a>
                             className={getLinkClasses(tab.url)}
-                            onClick={() => {
-                                // Manual state update for immediate UI feedback on click
-                                setCurrentPath(tab.url);
-                            }}
+                            // 👇 FIX APPLIED: Removed the manual setCurrentPath
+                            onClick={() => { setCurrentPath(tab.url); }}
                         >
                             {tab.title}
                         </a>
@@ -79,8 +74,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </nav>
             </header>
 
-            {/* Page Content Area */}
-            <main className="mt-6 bg-white rounded-xl shadow-xl p-6 min-h-[60vh]">
+
+            <main className=" bg-white rounded-xl shadow-xl p-6 min-h-[60vh]">
                 {children}
             </main>
         </div>

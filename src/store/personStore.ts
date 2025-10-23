@@ -11,7 +11,7 @@ interface PersonProps {
 export const usePersonStore = create<PersonProps>((set) => ({
     personData: [],
     setPersonData: (data: any) => {
-        set({
+        set({ 
             personData: data
         })
     },

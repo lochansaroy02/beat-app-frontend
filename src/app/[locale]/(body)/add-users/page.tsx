@@ -19,6 +19,8 @@ const CreateUsersPage = () => {
     const { userData } = useAuthStore()
     const [name, setName] = useState<string>("")
     const [pnoNo, setPnoNo] = useState<string>("")
+    const [co, setCO] = useState<string>("")
+    const [policeStation, setPoliceStation] = useState<string>("")
     const [password, setPassword] = useState<string>("")
     const [isModalOpen, setIsModalOpen] = useState(false) // State for modal visibility
 
@@ -55,6 +57,8 @@ const CreateUsersPage = () => {
                 name: name,
                 pnoNo: pnoNo,
                 password: password,
+                co: co,
+                policeStation: policeStation
             }
 
             // Call the store action for a single user
@@ -128,7 +132,8 @@ const CreateUsersPage = () => {
                     <InputComponent label="Name" value={name} setInput={setName} />
                     <InputComponent label="PNo No" value={pnoNo} setInput={setPnoNo} type="text" />
                     <InputComponent label="Password" value={password} setInput={setPassword} type="password" />
-
+                    <InputComponent label="CO" value={co} setInput={setCO} type="password" />
+                    <InputComponent label="Police Station" value={policeStation} setInput={setPoliceStation} type="password" />
                     <div className="flex justify-center mt-4">
                         <Button onClick={handleGenerate} className="w-1/3">Create User</Button>
                     </div>

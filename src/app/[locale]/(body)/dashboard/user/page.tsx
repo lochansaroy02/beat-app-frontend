@@ -26,7 +26,6 @@ const page = () => {
     // State to store QR data: Map<pnoNo, QRDataItem[]>
     const [qrDataMap, setQrDataMap] = useState<Map<string, QRDataItem[]>>(new Map());
     const [addressMap, setAddressMap] = useState<Map<string, string>>(new Map());
-    console.log(qrDataMap);
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
 
@@ -76,7 +75,7 @@ const page = () => {
     const fetchQRDataForPerson = useCallback(async (pnoNumber: string): Promise<QRDataItem[]> => {
         try {
             const response = await getQRData(pnoNumber);
-            if (response.data.success) {
+            if (response?.data.success) {
                 // Assuming response.data.data is the array of QRDataItem
                 return response.data.data;
             }

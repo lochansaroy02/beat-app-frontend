@@ -13,16 +13,16 @@ const DropDown = ({ selectedValue, options, handleSelect, selectValueLabel = "se
             <label className="text-neutral-800 text-sm  text-nowrap" htmlFor={label}>{label}</label>
             <select
                 id={label} // Good for accessibility
-                className='rounded-lg w-full glass-effect text-neutral-800 px-2 py-1'
+                className='rounded-lg w-full  text-neutral-800 px-2 py-1'
                 value={selectedValue}
                 onChange={(e) => { handleSelect(e.target.value) }}
             >
-                <option className='bg-blue' disabled value="">{selectValueLabel}</option>
+                <option className='' disabled value="">{selectValueLabel}</option>
                 {
                     options.map((item) => (
                         <option
                             key={item.value} // Added key prop to fix the warning
-                            className='bg-blue px-2'
+                            className=' px-2'
                             value={item.value} // Use the value for the option's value
                         >
                             {item.label} {/* Use the label for the displayed text */}
