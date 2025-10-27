@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import DropDown from "@/components/ui/DropDown";
 import InputComponent from "@/components/ui/InputComponent";
 import { useAuthStore, USER_DATA_KEY } from "@/store/authStore";
 import { useUserStore } from "@/store/userStore";
@@ -12,6 +13,8 @@ interface BulkUserData {
     name: string;
     pnoNo: string;
     password: string;
+    co: string,
+    policeStation: string
 }
 
 const CreateUsersPage = () => {
@@ -30,12 +33,14 @@ const CreateUsersPage = () => {
 
     // --- Helper to get Admin ID ---
     const getAdminId = (): string | undefined => {
+        // Ensure this key matches your actual localStorage key
         const admin = localStorage.getItem(USER_DATA_KEY)
         if (!admin) {
             return undefined
         }
         try {
             const parsedData = JSON.parse(admin)
+            // Assuming the ID is directly on the user data object
             return parsedData?.id
         } catch (e) {
             console.error("Failed to parse admin data from localStorage:", e)
@@ -47,10 +52,15 @@ const CreateUsersPage = () => {
     const handleGenerate = async () => {
         try {
             const adminId = getAdminId()
-            console.log(adminId);
             if (!adminId) {
                 alert("Admin ID not found. Cannot create user.")
                 return
+            }
+
+            // Simple validation
+            if (!name || !pnoNo || !password || !co || !policeStation) {
+                alert("Please fill all fields: Name, PNo No, Password, CO, and Police Station.")
+                return;
             }
 
             const sentData = {
@@ -62,15 +72,20 @@ const CreateUsersPage = () => {
             }
 
             // Call the store action for a single user
+            // NOTE: Assumes createUsers handles a single object correctly
             await createUsers(sentData, adminId)
 
             // Clear form fields on success
             setName("");
             setPnoNo("");
             setPassword("");
+            setCO("")
+            setPoliceStation("")
+            alert("User created successfully!")
 
         } catch (error) {
             console.error(error)
+            alert("Failed to create user. Check console for details.")
         }
     }
 
@@ -89,12 +104,75 @@ const CreateUsersPage = () => {
             }
 
             // Call the store action for bulk users
+            // NOTE: Assumes createUsers handles an array of objects correctly
             await createUsers(data, adminId)
+            alert(`${data.length} users uploaded successfully!`)
+
 
         } catch (error) {
             console.error("Bulk upload error:", error)
+            alert("Failed to perform bulk upload. Check console for details.")
+        } finally {
+            setIsModalOpen(false); // Close modal regardless of success/failure
         }
     }
+
+
+    // --- Dropdown Options Data ---
+    const coOptionns = [
+        { label: "Select CO", value: "" }, // Added default/placeholder
+        { label: "City", value: "city" },
+        { label: "Kairana", value: "kairana" },
+        { label: "Thanabhawan", value: "thanabhawan" },
+    ]
+
+    const cityPsOptions = [
+        { label: "Select Police Station", value: "" }, // Added default/placeholder
+        { label: "Shamli", value: "shamli" },
+        { label: "Adarsh Mandi", value: "adarshMandi" },
+    ]
+
+    const kairanaPSoptions = [
+        { label: "Select Police Station", value: "" }, // Added default/placeholder
+        { label: "Kairana", value: "kairana" },
+        { label: "Jhinjana", value: "jhinjhana" },
+        { label: "Kandhala", value: "kandhala" },
+    ]
+
+    const thanabhawanPSOptions = [
+        { label: "Select Police Station", value: "" }, // Added default/placeholder
+        { label: "Thanabhawan", value: "thanabhawan" },
+        { label: "Babri", value: "babri" },
+        { label: "Garipukhta", value: "garipukhta" },
+    ]
+
+    /**
+     * Helper to determine which PS options to display based on the selected CO.
+     * Also resets policeStation when CO changes to ensure data consistency.
+     */
+    const handleCOSelect = (newCO: string) => {
+        setCO(newCO);
+        // Reset the Police Station selection whenever CO changes
+        setPoliceStation("");
+    }
+
+    /**
+     * Determines the correct list of Police Station options based on the current CO.
+     */
+    const getPoliceStationOptions = () => {
+        switch (co) {
+            case "city":
+                return cityPsOptions;
+            case "kairana":
+                return kairanaPSoptions;
+            case "thanabhawan":
+                return thanabhawanPSOptions;
+            default:
+                // Return a list with only the placeholder if no CO is selected or if the value is unexpected
+                return [{ label: "Select CO first", value: "" }];
+        }
+    }
+    // --- End Dropdown Logic ---
 
 
     return (
@@ -132,8 +210,25 @@ const CreateUsersPage = () => {
                     <InputComponent label="Name" value={name} setInput={setName} />
                     <InputComponent label="PNo No" value={pnoNo} setInput={setPnoNo} type="text" />
                     <InputComponent label="Password" value={password} setInput={setPassword} type="password" />
-                    <InputComponent label="CO" value={co} setInput={setCO} type="password" />
-                    <InputComponent label="Police Station" value={policeStation} setInput={setPoliceStation} type="password" />
+
+                    {/* 1. Correct CO DropDown */}
+                    <DropDown
+                        label="Select CO"
+                        options={coOptionns}
+                        selectedValue={co}
+                        handleSelect={handleCOSelect} // Use helper to also clear policeStation
+                    />
+
+                    {/* 2. Police Station DropDown (Conditionally Rendered based on CO) */}
+                    <DropDown
+                        label="Select Police Station"
+                        options={getPoliceStationOptions()}
+                        selectedValue={policeStation}
+                        handleSelect={setPoliceStation}
+                        // Disable if no valid CO is selected
+                        disabled={co === ""}
+                    />
+
                     <div className="flex justify-center mt-4">
                         <Button onClick={handleGenerate} className="w-1/3">Create User</Button>
                     </div>

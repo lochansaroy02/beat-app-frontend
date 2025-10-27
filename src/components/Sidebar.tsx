@@ -8,7 +8,6 @@ import { useMemo } from 'react';
 
 const Sidebar = () => {
     const { userData } = useAuthStore()
-    console.log(userData);
     const path = usePathname();
     const router = useRouter();
     const t = useTranslations("Sidebar");

@@ -9,6 +9,8 @@ interface UserDataInput {
     pnoNo: string,
     password: string,
     name: string,
+    co: string,
+    policeStation: string
 }
 
 // Data passed to the create action: either a single object or an array of objects

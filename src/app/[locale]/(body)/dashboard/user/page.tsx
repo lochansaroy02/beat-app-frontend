@@ -1,7 +1,6 @@
 "use client";
 
 import UserTable from "@/components/Table";
-import { Button } from "@/components/ui/button";
 import DatePicker from "@/components/ui/datePicker"; // Assuming DatePicker is a reusable component
 import InputComponent from "@/components/ui/InputComponent";
 import { useAuthStore } from "@/store/authStore";
@@ -38,7 +37,7 @@ const page = () => {
     // -------------------------------------
 
     /** * Fetches the initial person data for the current user.
-     */
+      */
     const handleGetPersonData = useCallback(async (userId: number | undefined) => {
         if (userId) {
             //@ts-ignore
@@ -193,7 +192,6 @@ const page = () => {
             const pnoNosWithScanInRange = new Set<string>();
 
             // Convert DD-MM-YYYY dates to Date objects for comparison
-            // Note: This conversion is only for comparison; the qrData.scannedOn is still a string.
             const [sDay, sMonth, sYear] = actualStartDate.split('-').map(Number);
             // Months are 0-indexed in Date object, so sMonth - 1
             const startOfDay = new Date(sYear, sMonth - 1, sDay);
@@ -207,9 +205,21 @@ const page = () => {
             for (const [pnoNo, qrData] of qrDataMap.entries()) {
                 const hasScanInRange = qrData.some(item => {
                     // item.scannedOn is like "DD-MM-YYYY HH:MM:SS"
+
+                    // ✅ FIX APPLIED: Check if item.scannedOn exists before proceeding
+                    if (!item.scannedOn) {
+                        return false;
+                    }
+
                     // Extract DD-MM-YYYY part and convert to a comparable Date object
                     const datePart = item.scannedOn.split(' ')[0]; // DD-MM-YYYY
                     const [qDay, qMonth, qYear] = datePart.split('-').map(Number);
+
+                    // Fallback if date part is malformed
+                    if (qDay === undefined || qMonth === undefined || qYear === undefined) {
+                        return false;
+                    }
+
                     // Use new Date(Year, Month-1, Day) for consistent comparison without time component issues
                     const scanDate = new Date(qYear, qMonth - 1, qDay);
                     scanDate.setHours(12, 0, 0, 0); // Set to noon to avoid timezone/daylight savings issues
@@ -231,7 +241,8 @@ const page = () => {
             const pnoNosWithScanOnDate = new Set<string>();
             for (const [pnoNo, qrData] of qrDataMap.entries()) {
                 const hasScanOnDate = qrData.some(item =>
-                    item.scannedOn.startsWith(actualStartDate) // DD-MM-YYYY match
+                    // ✅ FIX APPLIED: Add null check for item.scannedOn
+                    item.scannedOn && item.scannedOn.startsWith(actualStartDate) // DD-MM-YYYY match
                 );
                 if (hasScanOnDate) {
                     pnoNosWithScanOnDate.add(pnoNo);
@@ -245,7 +256,8 @@ const page = () => {
             const pnoNosWithScanOnDate = new Set<string>();
             for (const [pnoNo, qrData] of qrDataMap.entries()) {
                 const hasScanOnDate = qrData.some(item =>
-                    item.scannedOn.startsWith(actualEndDate) // DD-MM-YYYY match
+                    // ✅ FIX APPLIED: Add null check for item.scannedOn
+                    item.scannedOn && item.scannedOn.startsWith(actualEndDate) // DD-MM-YYYY match
                 );
                 if (hasScanOnDate) {
                     pnoNosWithScanOnDate.add(pnoNo);
@@ -274,12 +286,6 @@ const page = () => {
 
     return (
         <div className='w-full p-4'>
-            <div className='flex justify-center w-full mb-6'>
-                <h1 className='text-2xl font-bold border-b-2 pb-2'>
-                    Person Details
-                </h1>
-            </div>
-
             <div className="glass-effect my-4 h-24 flex items-center gap-4 px-4 ">
                 {/* --- MODIFICATION: Two DatePickers for Start and End Date --- */}
                 <div>
@@ -303,7 +309,6 @@ const page = () => {
                         setInput={setSearchQuery}
                         placeholder="Search by name or PNO..."
                     />
-                    <Button onClick={handleSearchClick}>Search</Button>
                 </div>
             </div>
 

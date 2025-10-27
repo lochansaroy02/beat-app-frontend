@@ -11,7 +11,7 @@ interface TabItem {
 const tabs: TabItem[] = [
     // Paths are absolute: /dashboard/users and /dashboard/qr-code
     { title: "Users Dashboard", url: "/dashboard/user" },
-    { title: "QR Code Generator", url: "/dashboard/qr-code" },
+    { title: "QR Dashboard", url: "/dashboard/qr-code" },
 ];
 
 /**
@@ -45,7 +45,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         // This is robust for nested paths like /dashboard/user/profile
         const isActive = currentPath.startsWith(url);
         return `
-            flex-1 text-center py-3 px-6 rounded-t-lg transition-all duration-300 font-medium whitespace-nowrap
+            flex-1 text-center py-3 px-6 rounded-lg transition-all duration-300 font-medium whitespace-nowrap
             ${isActive
                 ? 'bg-indigo-600 text-white border-b-2 border-indigo-500 shadow-md' // Active state 
                 : 'text-gray-600 hover:text-indigo-600 hover:bg-gray-100 border-b-2 border-transparent' // Inactive state styling
@@ -56,7 +56,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
     return (
         <div className="min-h-screen bg-gray-100  sm:p-8">
-            <header className="mb-6 bg-white rounded-xl shadow-xl p-6">
+            <header className="mb-2  flex justify-center bg-white rounded-xl shadow-xl ">
 
                 {/* Tabs Container */}
                 <nav className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-1 mt-4 border-b border-gray-200">
@@ -75,7 +75,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </header>
 
 
-            <main className=" bg-white rounded-xl shadow-xl p-6 min-h-[60vh]">
+            <main className=" bg-white rounded-xl shadow-xl  min-h-[60vh]">
                 {children}
             </main>
         </div>
