@@ -1,4 +1,5 @@
 import { Person } from "@/types/type";
+import { Trash2 } from "lucide-react"; // Icon for the delete button
 import ImageSlider from "./ImageSlider";
 
 // Define a type for a single QR scan record for better clarity
@@ -6,18 +7,24 @@ type QrScanData = {
     id: string; // Assuming a unique ID for the scan record
     scannedOn: string;
     policeStation: string;
-    lattitude: number; // Added lat/long since they're used for address
+    lattitude: number;
     longitude: number;
     dutyPoint: string
     // Add other properties of a QR scan record here
 };
 
-const UserTable = ({ personData, qrDataMap, addressMap, isLoading }: {
+// Update the props type, removing isAdmin and keeping onDeleteRow
+type UserTableProps = {
     personData: Person[], // Use Person[] for better typing
     qrDataMap: any, // Map<PNO_NO, QR_SCAN_ARRAY>
     addressMap: Map<string, string>, // Map<PNO_NO, ADDRESS_STRING>
-    isLoading: boolean
-}) => {
+    isLoading: boolean,
+    // Function to handle deletion. personId is required, scanId is optional (only for rows with scan data)
+}
+
+const UserTable = ({ personData, qrDataMap, addressMap, isLoading }: UserTableProps) => {
+
+    // --- Loading and Empty State ---
 
     if (isLoading) {
         return (
@@ -27,8 +34,6 @@ const UserTable = ({ personData, qrDataMap, addressMap, isLoading }: {
         );
     }
 
-
-    // Now uses the updated displayData from Users.tsx
     if (!personData || personData.length === 0) {
         return (
             <div className='w-full p-4 '>
@@ -36,6 +41,19 @@ const UserTable = ({ personData, qrDataMap, addressMap, isLoading }: {
             </div>
         );
     }
+
+    // --- Utility Function for Delete Action ---
+
+
+
+    const handleDelete = (personId: string, scanId?: string) => {
+        // Simple confirmation before calling the delete handler from the parent
+        if (window.confirm(`Are you sure you want to delete this ${scanId ? 'scan record' : 'person record'}?`)) {
+                
+        }
+    }
+
+
 
     return (
         <div className="overflow-x-auto shadow-lg rounded-lg">
@@ -67,6 +85,10 @@ const UserTable = ({ personData, qrDataMap, addressMap, isLoading }: {
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Images
                         </th>
+                        {/* Actions Header (No longer conditional) */}
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Actions
+                        </th>
                     </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -80,8 +102,8 @@ const UserTable = ({ personData, qrDataMap, addressMap, isLoading }: {
                             const address = addressMap.get(person.pnoNo) || (scanCount > 0 ? 'Fetching Address...' : 'N/A');
 
                             if (scanCount === 0) {
-                                // CASE 1: No scan data found (render a single row)
-                                // IMPORTANT: Ensure the number of <td> elements matches the number of <th> elements (8 in total).
+                                // CASE 1: No scan data found (render a single row for the person)
+                                // IMPORTANT: Total columns must match header (9 in total)
                                 return (
                                     <tr key={person.id || index} className='hover:bg-gray-100 transition-colors bg-red-50/50'>
                                         <td className="px-6 py-4 text-sm font-medium text-gray-900">{index + 1}</td> {/* 1. Sr No. */}
@@ -90,12 +112,23 @@ const UserTable = ({ personData, qrDataMap, addressMap, isLoading }: {
                                         <td className="px-6 py-4 whitespace-normal text-sm text-gray-700">{address}</td> {/* 4. Location (Address) */}
                                         <td className="px-6 py-4 text-sm text-gray-700">Never Scanned</td> {/* 5. Scanned On */}
                                         <td className="px-6 py-4 text-sm text-gray-700">N/A</td> {/* 6. Police Station */}
-                                        <td className="px-6 py-4 text-sm text-gray-700">N/A</td> {/* 7. Duty Point (Added N/A to match the header) */}
+                                        <td className="px-6 py-4 text-sm text-gray-700">N/A</td> {/* 7. Duty Point */}
                                         <td className="px-6 py-4"><ImageSlider photos={person.photos} /></td> {/* 8. Images */}
+                                        {/* 9. Actions Column for no-scan row (Person Deletion) */}
+                                        <td className="px-6 py-4 text-sm text-gray-700">
+                                            <button
+                                                onClick={() => handleDelete(person.id!)} // Delete the entire person record
+                                                className="text-red-600 hover:text-red-900 p-1 rounded transition-colors"
+                                                title="Delete Person Record (No Scans)"
+                                            >
+                                                <Trash2 className="w-5 h-5" />
+                                            </button>
+                                        </td>
                                     </tr>
                                 );
                             }
 
+                            // CASE 2: Scan data exists (render multiple rows with rowSpan)
                             return personQrData.map((scan: QrScanData, scanIndex: number) => {
                                 return (
                                     <tr key={`${person.id}-${scan.id || scanIndex}`} className='hover:bg-gray-100 transition-colors'>
@@ -120,7 +153,7 @@ const UserTable = ({ personData, qrDataMap, addressMap, isLoading }: {
                                                     {address}
                                                 </td>
                                             </>
-                                        )}{/* FIX: Removed whitespace/newline after the closing fragment </> */}
+                                        )}
 
                                         {/* Non-RowSpan Columns (Scan-specific data) */}
 
@@ -145,7 +178,19 @@ const UserTable = ({ personData, qrDataMap, addressMap, isLoading }: {
                                             <td rowSpan={scanCount} className="px-6 py-4 border-l border-gray-200">
                                                 <ImageSlider photos={person.photos} />
                                             </td>
-                                        )}{/* FIX: Removed whitespace/newline after the closing conditional bracket } */}
+                                        )}
+
+                                        {/* 9. Actions Column (Scan-specific Deletion) */}
+                                        <td className="px-6 py-4 text-sm text-gray-700">
+                                            {/* Delete button for the specific scan row */}
+                                            <button
+                                                onClick={() => handleDelete(person.id!, scan.id)} // Delete the specific scan record
+                                                className="text-red-600 hover:text-red-900 p-1 rounded transition-colors"
+                                                title="Delete Scan Record"
+                                            >
+                                                <Trash2 className="w-5 h-5" />
+                                            </button>
+                                        </td>
                                     </tr>
                                 )
                             })

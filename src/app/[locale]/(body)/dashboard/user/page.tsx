@@ -313,8 +313,9 @@ const page = () => {
             </div>
 
             <UserTable
+               
                 addressMap={addressMap}
-                personData={displayData} // Use displayData for the table
+                personData={displayData.reverse()} // Use displayData for the table
                 qrDataMap={qrDataMap}
                 isLoading={isLoading}
             />

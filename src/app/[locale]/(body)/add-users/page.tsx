@@ -119,7 +119,7 @@ const CreateUsersPage = () => {
 
 
     // --- Dropdown Options Data ---
-    const coOptionns = [
+    const coOptions = [
         { label: "Select CO", value: "" }, // Added default/placeholder
         { label: "City", value: "city" },
         { label: "Kairana", value: "kairana" },
@@ -214,7 +214,7 @@ const CreateUsersPage = () => {
                     {/* 1. Correct CO DropDown */}
                     <DropDown
                         label="Select CO"
-                        options={coOptionns}
+                        options={coOptions}
                         selectedValue={co}
                         handleSelect={handleCOSelect} // Use helper to also clear policeStation
                     />

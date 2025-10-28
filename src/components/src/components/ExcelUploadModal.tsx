@@ -55,7 +55,7 @@ const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({ isOpen, onClose }) 
 
                 // Map/validate data to match QrProps
                 const bulkData: QrProps[] = json.map(row => ({
-                    lattitude: String(row.Lattitude || row.lattitude), // Use common column names
+                    lattitude: String(row.Latitude || row.latitude), // Use common column names
                     longitude: String(row.Longitude || row.longitude),
                     policeStation: String(row['Police Station'] || row.policeStation),
                     dutyPoint: String(row['Duty Point'] || row.dutyPoint || "")
@@ -132,3 +132,9 @@ const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({ isOpen, onClose }) 
 };
 
 export default ExcelUploadModal;
+
+
+
+
+
+
