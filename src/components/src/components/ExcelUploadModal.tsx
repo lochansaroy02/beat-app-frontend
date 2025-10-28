@@ -2,6 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { useQRstore } from "@/store/qrStore";
 import React, { useState } from 'react';
+import toast from "react-hot-toast";
 import * as XLSX from 'xlsx';
 
 // Re-using the QR data interface from the store for clarity
@@ -59,7 +60,7 @@ const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({ isOpen, onClose }) 
                     longitude: String(row.Longitude || row.longitude),
                     policeStation: String(row['Police Station'] || row.policeStation),
                     dutyPoint: String(row['Duty Point'] || row.dutyPoint || ""),
-                    cug: Number(row['cug'] || row["CUG"] || row.cug)
+                    cug: Number(row['CUG'] || row.cug)
                 })).filter(item => item.lattitude && item.longitude && item.policeStation && item.cug); // Filter out invalid rows
 
                 if (bulkData.length === 0) {
@@ -69,9 +70,10 @@ const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({ isOpen, onClose }) 
                 // Send bulk data to the store/backend
                 setMessage(`Found ${bulkData.length} valid entries. Uploading...`);
                 const result = await createBulkQR(bulkData);
-
+                console.log(result);
                 if (result) {
                     setMessage(`Successfully processed ${bulkData.length} entries. See console for details.`);
+                    toast.success("Data uploaded successfully")
                     // Optionally close the modal on success
                     setTimeout(onClose, 2000);
                 } else {

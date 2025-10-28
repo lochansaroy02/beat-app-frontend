@@ -12,7 +12,7 @@ const Page = () => {
     const [long, setLong] = useState("");
     const [policeStation, setPoliceStation] = useState("");
     const [dutyPoint, setDutyPoint] = useState("");
-    const [cug, setCug] = useState(null);
+    const [cug, setCug] = useState("");
 
     const [url, setUrl] = useState("")
     const [isModalOpen, setIsModalOpen] = useState(false); // State for modal visibility
@@ -148,10 +148,8 @@ const Page = () => {
                 <div>
                     <InputComponent
                         label="CUG Number"
-                        value={cug === null ? '' : cug}
-                        //@ts-ignore
-                        setInput={(val) => setCug(Number(val))}
-                        type="number"
+                        value={cug}
+                        setInput={setCug}
                     />
                     {longError && <p className="text-red-500 text-sm">{longError}</p>}
                 </div>
