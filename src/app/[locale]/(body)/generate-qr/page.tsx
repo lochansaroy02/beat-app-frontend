@@ -12,6 +12,7 @@ const Page = () => {
     const [long, setLong] = useState("");
     const [policeStation, setPoliceStation] = useState("");
     const [dutyPoint, setDutyPoint] = useState("");
+    const [cug, setCug] = useState(null);
 
     const [url, setUrl] = useState("")
     const [isModalOpen, setIsModalOpen] = useState(false); // State for modal visibility
@@ -49,6 +50,8 @@ const Page = () => {
         setLongError(validateLongitude(val));
     };
 
+
+
     const cordToAddress = async (lat: string, long: string) => {
         try {
             const response = await axios.get(`https://geocode.maps.co/reverse?lat=${lat}&lon=${long}&api_key=${process.env.NEXT_PUBLIC_FREE_MAP_API_KEY}`)
@@ -75,14 +78,17 @@ const Page = () => {
             lattitude: lat,
             longitude: long,
             policeStation: policeStation,
-            dutyPoint: dutyPoint
+            dutyPoint: dutyPoint,
+            cug: cug
         };
+
 
         try {
             const url = await generateQrcode(sentData);
             //@ts-ignore
             setUrl(url);
             const data = await createQR(sentData)
+            console.log(data);
             alert("Single QR code generated successfully!");
 
         } catch (error) {
@@ -139,6 +145,16 @@ const Page = () => {
                     value={policeStation}
                     setInput={setPoliceStation}
                 />
+                <div>
+                    <InputComponent
+                        label="CUG Number"
+                        value={cug === null ? '' : cug}
+                        //@ts-ignore
+                        setInput={(val) => setCug(Number(val))}
+                        type="number"
+                    />
+                    {longError && <p className="text-red-500 text-sm">{longError}</p>}
+                </div>
                 <InputComponent
                     label="Duty Point"
                     value={dutyPoint}

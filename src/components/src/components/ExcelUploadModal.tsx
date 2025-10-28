@@ -58,8 +58,9 @@ const ExcelUploadModal: React.FC<ExcelUploadModalProps> = ({ isOpen, onClose }) 
                     lattitude: String(row.Latitude || row.latitude), // Use common column names
                     longitude: String(row.Longitude || row.longitude),
                     policeStation: String(row['Police Station'] || row.policeStation),
-                    dutyPoint: String(row['Duty Point'] || row.dutyPoint || "")
-                })).filter(item => item.lattitude && item.longitude && item.policeStation); // Filter out invalid rows
+                    dutyPoint: String(row['Duty Point'] || row.dutyPoint || ""),
+                    cug: Number(row['cug'] || row["CUG"] || row.cug)
+                })).filter(item => item.lattitude && item.longitude && item.policeStation && item.cug); // Filter out invalid rows
 
                 if (bulkData.length === 0) {
                     throw new Error("No valid data found. Ensure your columns are 'Lattitude', 'Longitude', 'Police Station', 'Duty Point'.");
