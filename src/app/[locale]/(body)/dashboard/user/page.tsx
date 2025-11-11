@@ -8,10 +8,29 @@ import { usePersonStore } from "@/store/personStore";
 import { useQRstore } from "@/store/qrStore";
 import { Person, QRDataItem } from "@/types/type";
 import { cordToAddress } from "@/utils/cordToAddress";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+
+// --- MODIFICATION: Define Time Phases ---
+interface TimePhase {
+    label: string;
+    startHour: number; // 24-hour format (0-23)
+    endHour: number;   // 24-hour format (0-23)
+}
+
+const TIME_PHASES: TimePhase[] = [
+    { label: "Day Phase 1 (6AM - 9AM)", startHour: 6, endHour: 9 },
+    { label: "Day Phase 2 (9AM - 12PM)", startHour: 9, endHour: 12 },
+    { label: "Day Phase 3 (12PM - 3PM)", startHour: 12, endHour: 15 },
+    { label: "Day Phase 4 (3PM - 6PM)", startHour: 15, endHour: 18 },
+    { label: "Night Phase 1 (6PM - 9PM)", startHour: 18, endHour: 21 },
+    { label: "Night Phase 2 (9PM - 12AM)", startHour: 21, endHour: 0 }, // Special case for midnight boundary
+    { label: "Night Phase 3 (12AM - 3AM)", startHour: 0, endHour: 3 },
+    { label: "Night Phase 4 (3AM - 6AM)", startHour: 3, endHour: 6 },
+];
+// ----------------------------------------
 
 
-const page = () => {
+const Page = () => { // Renamed 'page' to 'Page' for convention
     // 1. Get the store data and actions
     const { getPerson, personData } = usePersonStore();
     const { getQRData } = useQRstore();
@@ -20,7 +39,7 @@ const page = () => {
     const { userData: authUserData, initializeStore, isInitialized } = useAuthStore();
 
     // Initialize displayData with personData. It will be [] initially.
-    const [displayData, setDisplayData] = useState(personData);
+    const [displayData, setDisplayData] = useState<Person[]>(personData);
 
     // State to store QR data: Map<pnoNo, QRDataItem[]>
     const [qrDataMap, setQrDataMap] = useState<Map<string, QRDataItem[]>>(new Map());
@@ -28,16 +47,19 @@ const page = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
 
-    // --- MODIFICATION: New Date States ---
+    // --- Date/Time States ---
     const [startDate, setStartDate] = useState<Date | undefined>(undefined);
     const [endDate, setEndDate] = useState<Date | undefined>(undefined);
     // State for formatted dates (DD-MM-YYYY)
     const [actualStartDate, setActualStartDate] = useState<string>("");
     const [actualEndDate, setActualEndDate] = useState<string>("");
+    // New state for time phase filter
+    const [selectedTimePhase, setSelectedTimePhase] = useState<string>(""); // Stores the phase label
+    // New state for police station filter
+    const [selectedPoliceStation, setSelectedPoliceStation] = useState<string>(""); // Stores the police station name
     // -------------------------------------
 
-    /** * Fetches the initial person data for the current user.
-      */
+    /** * Fetches the initial person data for the current user. */
     const handleGetPersonData = useCallback(async (userId: number | undefined) => {
         if (userId) {
             //@ts-ignore
@@ -48,7 +70,7 @@ const page = () => {
     }, [getPerson]);
 
 
-    // New: Initialize the Auth Store on mount
+    // Initialize the Auth Store on mount
     useEffect(() => {
         initializeStore();
     }, [initializeStore]);
@@ -65,7 +87,7 @@ const page = () => {
     }, [isInitialized, authUserData?.id, handleGetPersonData]);
 
 
-    // **CRITICAL FIX:** Synchronize displayData when personData is fetched and updated in the store.
+    // Synchronize displayData when personData is fetched and updated in the store.
     useEffect(() => {
         setDisplayData(personData);
     }, [personData]);
@@ -94,12 +116,20 @@ const page = () => {
                 const newQrDataMap = new Map<string, QRDataItem[]>();
 
                 const fetchPromises = personData.map(async (person: Person) => {
+                    // Check if we already have data for this pnoNo, and use existing if available
+                    if (qrDataMap.has(person.pnoNo)) {
+                        newQrDataMap.set(person.pnoNo, qrDataMap.get(person.pnoNo)!);
+                        return;
+                    }
+
                     const data = await fetchQRDataForPerson(person.pnoNo);
                     newQrDataMap.set(person.pnoNo, data);
                 });
 
                 await Promise.all(fetchPromises);
-                setQrDataMap(newQrDataMap);
+
+                // Merge the new data with existing data to ensure map stability
+                setQrDataMap(prevMap => new Map([...prevMap, ...newQrDataMap]));
                 setIsLoading(false);
             };
 
@@ -110,15 +140,20 @@ const page = () => {
     }, [personData, fetchQRDataForPerson]);
 
 
-    // 3. Address Geocoding (No change needed here)
+    // 3. Address Geocoding
     useEffect(() => {
         if (qrDataMap.size > 0) {
             const fetchAllAddresses = async () => {
                 const newAddressMap = new Map<string, string>();
                 const addressPromises: Promise<void>[] = [];
+                let needsUpdate = false;
 
                 for (const [pnoNo, qrData] of qrDataMap.entries()) {
-                    // Use the LAST scan (most recent) for location/address.
+                    // Skip if address is already mapped
+                    if (addressMap.has(pnoNo)) continue;
+
+                    needsUpdate = true;
+
                     const lastScan = qrData && qrData.length > 0 ? qrData[qrData.length - 1] : null;
 
                     if (lastScan) {
@@ -133,18 +168,21 @@ const page = () => {
                         });
                         addressPromises.push(promise);
                     } else {
-                        // Set a default for people without scan data
                         newAddressMap.set(pnoNo, 'N/A');
                     }
                 }
 
-                await Promise.all(addressPromises);
-                setAddressMap(prevMap => new Map([...prevMap, ...newAddressMap]));
+                if (needsUpdate) {
+                    await Promise.all(addressPromises);
+                    // Only update the state if new addresses were added
+                    setAddressMap(prevMap => new Map([...prevMap, ...newAddressMap]));
+                }
             };
 
             fetchAllAddresses();
         }
-    }, [qrDataMap]);
+    }, [qrDataMap, addressMap.size]); // Added addressMap.size to ensure this runs correctly when new people are loaded
+
 
     /**
      * Formats the Date object into a DD-MM-YYYY string for searching.
@@ -162,7 +200,7 @@ const page = () => {
         setter(`${dd}-${mm}-${yyyy}`);
     }
 
-    // --- MODIFICATION: Run formatting when start/end date pickers change ---
+    // Run formatting when start/end date pickers change
     useEffect(() => {
         formatDateString(startDate, setActualStartDate);
     }, [startDate]);
@@ -170,16 +208,150 @@ const page = () => {
     useEffect(() => {
         formatDateString(endDate, setActualEndDate);
     }, [endDate]);
-    // ----------------------------------------------------------------------
 
 
-    /**
-     * Filters the personData based on the current search query and date range.
-     */
+    // Helper function to determine if a scan time falls within a selected phase
+    const isTimeInPhase = (timeStr: string, phase: TimePhase): boolean => {
+        if (!timeStr) return false;
+
+        const parts = timeStr.trim().split(' '); // ["09:03", "PM"]
+        if (parts.length < 2) return false;
+
+        const [timePart, ampm] = parts;
+        const [hourStr] = timePart.split(':');
+        let scanHour = parseInt(hourStr, 10);
+
+        if (isNaN(scanHour)) return false;
+
+        // Convert 12-hour time to 24-hour time
+        if (ampm === 'PM' && scanHour !== 12) {
+            scanHour += 12;
+        } else if (ampm === 'AM' && scanHour === 12) {
+            scanHour = 0; // 12:XX AM (midnight hour) is 00 in 24-hour time
+        }
+        // If it's 1AM-11AM or 12PM-1PM, scanHour is already correct
+
+        // Now compare the 24-hour time
+        if (phase.startHour >= phase.endHour) {
+            // Crosses midnight (e.g., 21 to 0, or 0 to 3)
+            return scanHour >= phase.startHour || scanHour < phase.endHour;
+        } else {
+            // Standard phase (e.g., 6 to 9)
+            return scanHour >= phase.startHour && scanHour < phase.endHour;
+        }
+    };
+    // --------------------------------------------------------------------------------
+
+    // 4. Extract unique police stations from QR Data Map (CORRECTED LOGIC)
+    const uniquePoliceStations = useMemo(() => {
+        const stations = new Set<string>();
+        // Iterate through all QR data arrays in the map
+        for (const qrData of qrDataMap.values()) {
+            qrData.forEach(item => {
+                if (item.policeStation) {
+                    stations.add(item.policeStation);
+                }
+            });
+        }
+        return Array.from(stations).sort();
+    }, [qrDataMap]);
+
+
     const applyFilters = useCallback(() => {
         let filteredData = personData;
+        const selectedPhase = TIME_PHASES.find(p => p.label === selectedTimePhase);
 
-        // 1. Filter by Search Query (Name or PNO No.)
+        // --- Core Filtering Logic ---
+
+        // This is a comprehensive filter that combines Search, Date, Time, and Police Station.
+        // We calculate which PNOs match the QR/Scan filters (Date/Time/Police Station) first,
+        // then combine that with the Name/PNO search filter.
+
+        const pnoNosWithScanMatch = new Set<string>();
+        const needsScanFiltering = actualStartDate || actualEndDate || selectedTimePhase || selectedPoliceStation;
+
+        if (needsScanFiltering) {
+            const startOfDay = actualStartDate ? (() => {
+                const [sDay, sMonth, sYear] = actualStartDate.split('-').map(Number);
+                const date = new Date(sYear, sMonth - 1, sDay);
+                date.setHours(0, 0, 0, 0);
+                return date;
+            })() : null;
+
+            const endOfDay = actualEndDate ? (() => {
+                const [eDay, eMonth, eYear] = actualEndDate.split('-').map(Number);
+                const date = new Date(eYear, eMonth - 1, eDay);
+                date.setHours(23, 59, 59, 999);
+                return date;
+            })() : null;
+
+            // Iterate over all QR data to find matches
+            for (const [pnoNo, qrData] of qrDataMap.entries()) {
+                const hasScanMatch = qrData.some(item => {
+                    if (!item.scannedOn) {
+                        return false;
+                    }
+
+                    // 1. Police Station Filter
+                    let stationMatches = true;
+                    if (selectedPoliceStation) {
+                        stationMatches = item.policeStation === selectedPoliceStation;
+                    }
+                    if (!stationMatches) return false;
+
+
+                    // 2. Date/Time Parsing
+                    const parts = item.scannedOn.split(' ');
+                    const datePart = parts[0]; // DD-MM-YYYY
+                    const timeStr = parts.slice(1).join(' '); // HH:MM AM/PM
+
+
+                    // 3. Date Filtering Logic
+                    let dateMatches = true;
+                    if (actualStartDate || actualEndDate) {
+                        const [qDay, qMonth, qYear] = datePart.split('-').map(Number);
+                        if (qDay === undefined || qMonth === undefined || qYear === undefined) return false;
+
+                        const scanDate = new Date(qYear, qMonth - 1, qDay);
+                        scanDate.setHours(12, 0, 0, 0); // Normalize time for comparison
+
+                        let startMatch = startOfDay ? scanDate.getTime() >= startOfDay.getTime() : true;
+                        let endMatch = endOfDay ? scanDate.getTime() <= endOfDay.getTime() : true;
+
+                        // Refine single-date matches if only one is set
+                        if (startOfDay && !endOfDay) {
+                            startMatch = datePart === actualStartDate;
+                        }
+                        if (endOfDay && !startOfDay) {
+                            endMatch = datePart === actualEndDate;
+                        }
+
+                        dateMatches = startMatch && endMatch;
+                    }
+                    if (!dateMatches) return false;
+
+
+                    // 4. Time Phase Filtering Logic
+                    let timeMatches = true;
+                    if (selectedPhase && timeStr) {
+                        timeMatches = isTimeInPhase(timeStr, selectedPhase);
+                    }
+
+                    return dateMatches && timeMatches && stationMatches;
+                });
+
+                if (hasScanMatch) {
+                    pnoNosWithScanMatch.add(pnoNo);
+                }
+            }
+
+            // Filter the person data based on PNOs that had a matching scan
+            filteredData = filteredData.filter((person: Person) =>
+                pnoNosWithScanMatch.has(person.pnoNo)
+            );
+        }
+
+        // 5. Filter by Search Query (Name or PNO No.) on the result set
         if (searchQuery) {
             filteredData = filteredData.filter((item: Person) =>
                 item.name.toLocaleLowerCase().includes(searchQuery.toLocaleLowerCase()) ||
@@ -187,99 +359,19 @@ const page = () => {
             );
         }
 
-        // --- MODIFICATION: Filter by Date Range ---
-        if (actualStartDate && actualEndDate) {
-            const pnoNosWithScanInRange = new Set<string>();
-
-            // Convert DD-MM-YYYY dates to Date objects for comparison
-            const [sDay, sMonth, sYear] = actualStartDate.split('-').map(Number);
-            // Months are 0-indexed in Date object, so sMonth - 1
-            const startOfDay = new Date(sYear, sMonth - 1, sDay);
-            startOfDay.setHours(0, 0, 0, 0); // Start of the start day
-
-            const [eDay, eMonth, eYear] = actualEndDate.split('-').map(Number);
-            const endOfDay = new Date(eYear, eMonth - 1, eDay);
-            endOfDay.setHours(23, 59, 59, 999); // End of the end day
-
-            // Find all pnoNo's that have a scan within the date range
-            for (const [pnoNo, qrData] of qrDataMap.entries()) {
-                const hasScanInRange = qrData.some(item => {
-                    // item.scannedOn is like "DD-MM-YYYY HH:MM:SS"
-
-                    // ✅ FIX APPLIED: Check if item.scannedOn exists before proceeding
-                    if (!item.scannedOn) {
-                        return false;
-                    }
-
-                    // Extract DD-MM-YYYY part and convert to a comparable Date object
-                    const datePart = item.scannedOn.split(' ')[0]; // DD-MM-YYYY
-                    const [qDay, qMonth, qYear] = datePart.split('-').map(Number);
-
-                    // Fallback if date part is malformed
-                    if (qDay === undefined || qMonth === undefined || qYear === undefined) {
-                        return false;
-                    }
-
-                    // Use new Date(Year, Month-1, Day) for consistent comparison without time component issues
-                    const scanDate = new Date(qYear, qMonth - 1, qDay);
-                    scanDate.setHours(12, 0, 0, 0); // Set to noon to avoid timezone/daylight savings issues
-
-                    return scanDate.getTime() >= startOfDay.getTime() && scanDate.getTime() <= endOfDay.getTime();
-                });
-
-                if (hasScanInRange) {
-                    pnoNosWithScanInRange.add(pnoNo);
-                }
-            }
-
-            // Filter the current data set to only include PNOs with a scan in that range
-            filteredData = filteredData.filter((person: Person) =>
-                pnoNosWithScanInRange.has(person.pnoNo)
-            );
-        } else if (actualStartDate && !actualEndDate) {
-            // Handle case where only start date is selected (filter for that day only)
-            const pnoNosWithScanOnDate = new Set<string>();
-            for (const [pnoNo, qrData] of qrDataMap.entries()) {
-                const hasScanOnDate = qrData.some(item =>
-                    // ✅ FIX APPLIED: Add null check for item.scannedOn
-                    item.scannedOn && item.scannedOn.startsWith(actualStartDate) // DD-MM-YYYY match
-                );
-                if (hasScanOnDate) {
-                    pnoNosWithScanOnDate.add(pnoNo);
-                }
-            }
-            filteredData = filteredData.filter((person: Person) =>
-                pnoNosWithScanOnDate.has(person.pnoNo)
-            );
-        } else if (!actualStartDate && actualEndDate) {
-            // Handle case where only end date is selected (filter for that day only)
-            const pnoNosWithScanOnDate = new Set<string>();
-            for (const [pnoNo, qrData] of qrDataMap.entries()) {
-                const hasScanOnDate = qrData.some(item =>
-                    // ✅ FIX APPLIED: Add null check for item.scannedOn
-                    item.scannedOn && item.scannedOn.startsWith(actualEndDate) // DD-MM-YYYY match
-                );
-                if (hasScanOnDate) {
-                    pnoNosWithScanOnDate.add(pnoNo);
-                }
-            }
-            filteredData = filteredData.filter((person: Person) =>
-                pnoNosWithScanOnDate.has(person.pnoNo)
-            );
-        }
-        // ------------------------------------------------------------------
-
         setDisplayData(filteredData);
-    }, [personData, searchQuery, actualStartDate, actualEndDate, qrDataMap]);
+    }, [personData, searchQuery, actualStartDate, actualEndDate, selectedTimePhase, selectedPoliceStation, qrDataMap]);
 
-    // Apply filters automatically when search query or formatted dates changes
+
+    // Apply filters automatically when any dependency changes
     useEffect(() => {
         applyFilters();
-    }, [searchQuery, actualStartDate, actualEndDate, applyFilters]);
+    }, [searchQuery, actualStartDate, actualEndDate, selectedTimePhase, selectedPoliceStation, applyFilters]);
 
 
-    // Use the applyFilters function for the Search button
     const handleSearchClick = () => {
+        // Since filters are applied in useEffect, this button mainly triggers the dependency change if used.
+        // It's technically redundant if the inputs immediately update state, but kept for convention.
         applyFilters();
     };
 
@@ -287,7 +379,25 @@ const page = () => {
     return (
         <div className='w-full p-4'>
             <div className="glass-effect my-4 h-24 flex items-center gap-4 px-4 ">
-                {/* --- MODIFICATION: Two DatePickers for Start and End Date --- */}
+
+                {/* Police Station Selector (NEW - Based on QR Data) */}
+                <div>
+                    <label className="text-sm">Police Station</label>
+                    <select
+                        value={selectedPoliceStation}
+                        onChange={(e) => setSelectedPoliceStation(e.target.value)}
+                        className="p-2 border border-gray-300 rounded-md h-10 w-48 text-sm"
+                    >
+                        <option value="">All Stations</option>
+                        {uniquePoliceStations.map((station) => (
+                            <option key={station} value={station}>
+                                {station}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+
+                {/* DatePickers for Start and End Date */}
                 <div>
                     <label className="text-sm">Start Date</label>
                     <DatePicker
@@ -302,7 +412,23 @@ const page = () => {
                         setDate={setEndDate}
                     />
                 </div>
-                {/* ------------------------------------------------------------- */}
+                {/* Time Phase Selector */}
+                <div>
+                    <label className="text-sm">Time Phase</label>
+                    <select
+                        value={selectedTimePhase}
+                        onChange={(e) => setSelectedTimePhase(e.target.value)}
+                        className="p-2 border border-gray-300 rounded-md h-10 w-48 text-sm"
+                    >
+                        <option value="">All Times</option>
+                        {TIME_PHASES.map((phase) => (
+                            <option key={phase.label} value={phase.label}>
+                                {phase.label}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+                {/* ------------------------------------------- */}
                 <div className="flex gap-4 items-center">
                     <InputComponent
                         value={searchQuery}
@@ -313,7 +439,6 @@ const page = () => {
             </div>
 
             <UserTable
-               
                 addressMap={addressMap}
                 personData={displayData.reverse()} // Use displayData for the table
                 qrDataMap={qrDataMap}
@@ -323,4 +448,4 @@ const page = () => {
     );
 }
 
-export default page;
+export default Page;
